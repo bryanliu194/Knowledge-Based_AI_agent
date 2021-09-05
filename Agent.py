@@ -12,6 +12,7 @@
 from PIL import Image
 import numpy
 
+
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
     # processing necessary before your Agent starts solving problems here.
@@ -30,5 +31,5 @@ class Agent:
     #
     # Make sure to return your answer *as an integer* at the end of Solve().
     # Returning your answer as a string may cause your program to crash.
-    def Solve(self,problem):
+    def Solve(self, problem):
         return 1
