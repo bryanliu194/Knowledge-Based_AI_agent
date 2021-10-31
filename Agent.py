@@ -23,11 +23,10 @@ class Agent:
     def __init__(self):
         self.question_set = {}
         self.answer_set = {}
-        self.methods = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
+        self.methods2x2 = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
+        self.methods3x3 = []
         self.score = 0
         self.answer = 1
-
-
 
     # The primary method for solving incoming Raven's Progressive Matrices.
     # For each problem, your Agent's Solve() method will be called. At the
@@ -38,6 +37,7 @@ class Agent:
     #
     # Make sure to return your answer *as an integer* at the end of Solve().
     # Returning your answer as a string may cause your program to crash.
+
     def Solve(self, problem):
 
         self.read_img(problem)
@@ -49,9 +49,18 @@ class Agent:
 
         answer = self.answer
         print(self.answer)
-        print(self.score)
+        # print(self.score)
         self.__init__()
         return int(answer)
+
+    def solve_2by2(self):
+        for method in self.methods2x2:
+            method()
+            if self.score == 10:
+                break
+
+    def solve_3by3(self):
+        pass
 
     def read_img(self, problem):
 
@@ -93,18 +102,6 @@ class Agent:
                 self.question_set[key] = {'figure': figure, 'pixel': pixels}
             else:
                 self.answer_set[key] = {'figure': figure, 'pixel': pixels}
-
-        # print(self.question_set)
-        # print(self.answer_set)
-
-    def solve_2by2(self):
-        for method in self.methods:
-            method()
-            if self.score == 10:
-                break
-
-    def solve_3by3(self):
-        pass
 
     def method2x2_compare_same(self):
         a_shapes = self.question_set['A']
@@ -150,7 +147,8 @@ class Agent:
 
         for key in a_shapes['figure']:
             if key in b_shapes['figure']:
-                movement.append((a_shapes['figure'][key][0]-b_shapes['figure'][key][0], a_shapes['figure'][key][1]-b_shapes['figure'][key][1]))
+                movement.append((a_shapes['figure'][key][0] - b_shapes['figure'][key][0],
+                                 a_shapes['figure'][key][1] - b_shapes['figure'][key][1]))
 
         for key in c_shapes['figure']:
 
@@ -161,7 +159,8 @@ class Agent:
                 pixel_diff2 = abs(c_shapes['pixel'] - self.answer_set[key2]['pixel'])
 
                 if key in self.answer_set[key2]['figure']:
-                    movement2.append((c_shapes['figure'][key][0]-self.answer_set[key2]['figure'][key][0], c_shapes['figure'][key][1]-self.answer_set[key2]['figure'][key][1]))
+                    movement2.append((c_shapes['figure'][key][0] - self.answer_set[key2]['figure'][key][0],
+                                      c_shapes['figure'][key][1] - self.answer_set[key2]['figure'][key][1]))
 
                 if movement2 == movement and len(movement) > 0:
                     if abs(pixel_diff1 - pixel_diff2) < 300:
@@ -172,11 +171,11 @@ class Agent:
                         self.score = 5
                         self.answer = key
 
-
         movement = []
         for key in a_shapes['figure']:
             if key in c_shapes['figure']:
-                movement.append((a_shapes['figure'][key][0]-c_shapes['figure'][key][0], a_shapes['figure'][key][1]-c_shapes['figure'][key][1]))
+                movement.append((a_shapes['figure'][key][0] - c_shapes['figure'][key][0],
+                                 a_shapes['figure'][key][1] - c_shapes['figure'][key][1]))
 
         for key in b_shapes['figure']:
 
@@ -187,7 +186,8 @@ class Agent:
                 pixel_diff2 = abs(b_shapes['pixel'] - self.answer_set[key2]['pixel'])
 
                 if key in self.answer_set[key2]['figure']:
-                    movement2.append((b_shapes['figure'][key][0]-self.answer_set[key2]['figure'][key][0], b_shapes['figure'][key][1]-self.answer_set[key2]['figure'][key][1]))
+                    movement2.append((b_shapes['figure'][key][0] - self.answer_set[key2]['figure'][key][0],
+                                      b_shapes['figure'][key][1] - self.answer_set[key2]['figure'][key][1]))
 
                 if movement2 == movement and len(movement) > 0:
                     if abs(pixel_diff1 - pixel_diff2) < 300:
@@ -225,5 +225,3 @@ class Agent:
             elif abs(pixel_diff2 - pixel_diff) < 2000 and self.score < 4:
                 self.score = 4
                 self.answer = key
-
-
