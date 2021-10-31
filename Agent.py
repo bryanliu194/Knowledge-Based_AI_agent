@@ -23,8 +23,10 @@ class Agent:
     def __init__(self):
         self.question_set = {}
         self.answer_set = {}
+        self.question_set3 = {}
+        self.answer_set3 = {}
         self.methods2x2 = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
-        self.methods3x3 = []
+        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_enlarge]
         self.score = 0
         self.answer = 1
 
@@ -40,27 +42,101 @@ class Agent:
 
     def Solve(self, problem):
 
-        self.read_img(problem)
-
         if problem.problemType == '2x2':
-            self.solve_2by2()
+            self.read_img(problem)
+            for method in self.methods2x2:
+                method()
+                if self.score == 10:
+                    break
         elif problem.problemType == '3x3':
-            self.solve_3by3()
+            self.read_img3(problem)
+            for method in self.methods3x3:
+                method()
+                if self.score == 10:
+                    break
 
         answer = self.answer
-        print(self.answer)
-        # print(self.score)
+        print(f'answer {self.answer}')
+        print(f'score {self.score}')
         self.__init__()
         return int(answer)
 
-    def solve_2by2(self):
-        for method in self.methods2x2:
-            method()
-            if self.score == 10:
-                break
+    def method3x3_compare_same(self):
+        if np.count_nonzero(self.question_set3['A'] < 255) == np.count_nonzero(self.question_set3['B'] < 255) \
+                and np.count_nonzero(self.question_set3['B'] < 255) == np.count_nonzero(self.question_set3['C'] < 255):
 
-    def solve_3by3(self):
-        pass
+            for key in self.answer_set3:
+                pixels = np.count_nonzero(self.answer_set3[key] < 255)
+                if pixels == np.count_nonzero(self.question_set3['G'] < 255):
+                    self.answer = key
+                    self.score = 10
+
+    def method3x3_increase(self):
+        a = np.count_nonzero(self.question_set3['A'] < 255)
+        b = np.count_nonzero(self.question_set3['B'] < 255)
+        c = np.count_nonzero(self.question_set3['C'] < 255)
+
+        g = np.count_nonzero(self.question_set3['G'] < 255)
+        h = np.count_nonzero(self.question_set3['H'] < 255)
+
+        if (c - b)*1.05 > b - a > (c - b)*0.95:
+            for key in self.answer_set3:
+                ans = np.count_nonzero(self.answer_set3[key] < 255)
+                if (ans - h)*0.94 < (h - g) < (ans - h)*1.06:
+                    self.score = 8
+                    self.answer = key
+                    break
+
+    def method3x3_enlarge(self):
+        a = np.count_nonzero(self.question_set3['A'] < 255)
+        b = np.count_nonzero(self.question_set3['B'] < 255)
+        c = np.count_nonzero(self.question_set3['C'] < 255)
+
+        g = np.count_nonzero(self.question_set3['G'] < 255)
+        h = np.count_nonzero(self.question_set3['H'] < 255)
+        ans = np.count_nonzero(self.answer_set3['8'] < 255)
+
+        print(b - a)
+        print(c - b)
+        print(h - g)
+        print(ans - h)
+        print((ans - h)/(h - g))
+        print((c - b)/(b - a))
+
+        for key in self.answer_set3:
+            ans = np.count_nonzero(self.answer_set3[key] < 255)
+
+            if (ans - h)/(h - g)*0.8 < (c - b)/(b - a) < (ans - h)/(h - g)*1.2:
+                self.score = 4
+                self.answer = key
+
+            if (ans - h)/(h - g)*0.9 < (c - b)/(b - a) < (ans - h)/(h - g)*1.1:
+                self.score = 6
+                self.answer = key
+
+            if (ans - h)/(h - g)*0.95 < (c - b)/(b - a) < (ans - h)/(h - g)*1.05:
+                self.score = 8
+                self.answer = key
+
+    def common_area(self, a, b, c):
+        a = a < 255
+        comp1 = a == b
+        comp2 = c == b
+        common = comp1 == comp2
+        return common
+
+    def read_img3(self, problem):
+        for key in problem.figures:
+            img = cv2.imread(problem.figures[key].visualFilename)
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+            _, threshold = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+
+            if ord(key) >= ord("A"):
+                self.question_set3[key] = threshold
+            else:
+                self.answer_set3[key] = threshold
 
     def read_img(self, problem):
 
