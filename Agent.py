@@ -26,7 +26,7 @@ class Agent:
         self.question_set3 = {}
         self.answer_set3 = {}
         self.methods2x2 = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
-        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_sum, self.method3x3_diff_ver, self.method3x3_diff_hor, self.method3x3_enlarge]
+        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_sum, self.method3x3_add, self.method3x3_add2, self.method3x3_sub, self.common_area, self.method3x3_diff_ver, self.method3x3_diff_hor, self.method3x3_enlarge]
         self.a = None
         self.b = None
         self.c = None
@@ -61,6 +61,7 @@ class Agent:
             for method in self.methods3x3:
                 method()
                 if self.score == 10:
+                    print(method)
                     break
 
         answer = self.answer
@@ -90,6 +91,74 @@ class Agent:
                     self.score = 8
                 if (g + h + ans) * 0.99 < a + b + c < (g + h + ans) * 1.01 and abs(a + b + c - (g + h + ans)) < best:
                     best = abs(a + b + c - (g + h + ans))
+                    self.answer = key
+                    self.score = 10
+
+    def method3x3_add(self):
+        A, B, C, G, H = self.question_set3['A'], self.question_set3['B'], self.question_set3['C'], self.question_set3['G'], self.question_set3['H']
+        a, b, c, g, h = A - 255, B - 255, C - 255, G - 255, H - 255
+        best = 10000
+        c0 = a + b
+        c0 = np.clip(c0, 0, 1)
+        if np.count_nonzero(c - c0) < 400:
+            for key in self.answer_set3:
+                ans = self.answer_set3[key] - 255
+                i = g + h
+                i = np.clip(i, 0, 1)
+                nonzero = np.count_nonzero(ans - i)
+                if nonzero < 400 and nonzero < best:
+                    best = nonzero
+                    self.answer = key
+                    self.score = 10
+
+    def method3x3_add2(self):
+        A, B, C, G, H = self.question_set3['A'], self.question_set3['B'], self.question_set3['C'], self.question_set3['G'], self.question_set3['H']
+        a, b, c, g, h = A - 255, B - 255, C - 255, G - 255, H - 255
+        best = 10000
+        if np.count_nonzero(a - b - c) < 400:
+            for key in self.answer_set3:
+                ans = self.answer_set3[key] - 255
+                nonzero = np.count_nonzero(g - h - ans)
+                if nonzero < 400 and nonzero < best:
+                    best = nonzero
+                    self.answer = key
+                    self.score = 10
+
+    def method3x3_sub(self):
+        A, B, C, G, H = self.question_set3['A'], self.question_set3['B'], self.question_set3['C'], self.question_set3['G'], self.question_set3['H']
+        a, b, c, g, h = A - 255, B - 255, C - 255, G - 255, H - 255
+        best = 10000
+        sub = a - b
+        if np.count_nonzero(sub - c) < 2500:
+            for key in self.answer_set3:
+                ans = self.answer_set3[key] - 255
+                sub2 = g - h
+                sub2[sub2 < 0] = 1
+                nonzero = np.count_nonzero(sub2 - ans)
+                if nonzero < 2500 and nonzero < best:
+                    best = nonzero
+                    self.answer = key
+                    self.score = 10
+
+    def common_area(self):
+        A, B, C, G, H = self.question_set3['A'], self.question_set3['B'], self.question_set3['C'], self.question_set3[
+            'G'], self.question_set3['H']
+        a, b, c, g, h = A - 255, B - 255, C - 255, G - 255, H - 255
+        best = 100000
+        a = a * 5
+        g = g * 5
+        c0 = a - b
+        c0[c0 != 4] = 0
+        c0[c0 == 4] = 1
+        if np.count_nonzero(c0 - c) < 300:
+            for key in self.answer_set3:
+                ans = self.answer_set3[key] - 255
+                c1 = g - h
+                c1[c1 != 4] = 0
+                c1[c1 == 4] = 1
+                nonzero = np.count_nonzero(c1 - ans)
+                if nonzero < 300 and nonzero < best:
+                    best = nonzero
                     self.answer = key
                     self.score = 10
 
@@ -142,13 +211,6 @@ class Agent:
             if (ans - h)/(h - g)*0.95 < (c - b)/(b - a) < (ans - h)/(h - g)*1.05 and self.score < 8:
                 self.score = 8
                 self.answer = key
-
-    # def common_area(self, a, b, c):
-    #     a = a < 255
-    #     comp1 = a == b
-    #     comp2 = c == b
-    #     common = comp1 == comp2
-    #     return common
 
     def read_img3(self, problem):
         for key in problem.figures:
