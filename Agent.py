@@ -26,7 +26,15 @@ class Agent:
         self.question_set3 = {}
         self.answer_set3 = {}
         self.methods2x2 = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
-        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_enlarge]
+        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_sum, self.method3x3_diff_ver, self.method3x3_diff_hor, self.method3x3_enlarge]
+        self.a = None
+        self.b = None
+        self.c = None
+        self.d = None
+        self.e = None
+        self.f = None
+        self.g = None
+        self.h = None
         self.score = 0
         self.answer = 1
 
@@ -62,68 +70,85 @@ class Agent:
         return int(answer)
 
     def method3x3_compare_same(self):
-        if np.count_nonzero(self.question_set3['A'] < 255) == np.count_nonzero(self.question_set3['B'] < 255) \
-                and np.count_nonzero(self.question_set3['B'] < 255) == np.count_nonzero(self.question_set3['C'] < 255):
-
+        a, b, c, d, e, f, g, h = self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h
+        if a == b and b == c:
             for key in self.answer_set3:
-                pixels = np.count_nonzero(self.answer_set3[key] < 255)
-                if pixels == np.count_nonzero(self.question_set3['G'] < 255):
+                ans = np.count_nonzero(self.answer_set3[key] < 255)
+                if ans == g:
                     self.answer = key
                     self.score = 10
 
-    def method3x3_increase(self):
-        a = np.count_nonzero(self.question_set3['A'] < 255)
-        b = np.count_nonzero(self.question_set3['B'] < 255)
-        c = np.count_nonzero(self.question_set3['C'] < 255)
-
-        g = np.count_nonzero(self.question_set3['G'] < 255)
-        h = np.count_nonzero(self.question_set3['H'] < 255)
-
-        if (c - b)*1.05 > b - a > (c - b)*0.95:
+    def method3x3_sum(self):
+        a, b, c, d, e, f, g, h = self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h
+        best = 10000
+        if (d + e + f)*0.95 < a + b + c < (d + e + f)*1.05:
             for key in self.answer_set3:
                 ans = np.count_nonzero(self.answer_set3[key] < 255)
-                if (ans - h)*0.94 < (h - g) < (ans - h)*1.06:
-                    self.score = 8
+                if (g + h + ans) * 0.95 < a + b + c < (g + h + ans) * 1.05 and abs(a + b + c - (g + h + ans)) < best:
+                    best = abs(a + b + c - (g + h + ans))
                     self.answer = key
-                    break
+                    self.score = 8
+                if (g + h + ans) * 0.99 < a + b + c < (g + h + ans) * 1.01 and abs(a + b + c - (g + h + ans)) < best:
+                    best = abs(a + b + c - (g + h + ans))
+                    self.answer = key
+                    self.score = 10
 
-    def method3x3_enlarge(self):
-        a = np.count_nonzero(self.question_set3['A'] < 255)
-        b = np.count_nonzero(self.question_set3['B'] < 255)
-        c = np.count_nonzero(self.question_set3['C'] < 255)
+    def method3x3_diff_hor(self):
+        a, b, c, d, e, f, g, h = self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h
+        row1 = abs(a - b) + abs(b - c) + abs(a - c)
+        best = 10000
+        for key in self.answer_set3:
+            ans = np.count_nonzero(self.answer_set3[key] < 255)
+            row2 = abs(g-h) + abs(h-ans) + abs(g-ans)
+            if abs(row1-row2) < 100 and abs(row1-row2) < best:
+                best = abs(row1-row2)
+                self.answer = key
+                self.score = 10
 
-        g = np.count_nonzero(self.question_set3['G'] < 255)
-        h = np.count_nonzero(self.question_set3['H'] < 255)
-        ans = np.count_nonzero(self.answer_set3['8'] < 255)
-
-        print(b - a)
-        print(c - b)
-        print(h - g)
-        print(ans - h)
-        print((ans - h)/(h - g))
-        print((c - b)/(b - a))
+    def method3x3_diff_ver(self):
+        a, c, d, f, g = self.a, self.c, self.d, self.f, self.g
 
         for key in self.answer_set3:
             ans = np.count_nonzero(self.answer_set3[key] < 255)
+            if (c-f)*0.95 < a-d < (c-f)*1.05 or abs(a-d - c+f) < 500:
+                if (f-ans)*0.95 < d-g < (f-ans)*1.05 or abs(d-g - f+ans) < 500:
+                    self.answer = key
+                    self.score = 8
+            if (c-f)*0.99 < a-d < (c-f)*1.01 or abs(a-d - c+f) < 200:
+                if (f-ans)*0.99 < d-g < (f-ans)*1.01 or abs(d-g - f+ans) < 200:
+                    self.answer = key
+                    self.score = 10
 
-            if (ans - h)/(h - g)*0.8 < (c - b)/(b - a) < (ans - h)/(h - g)*1.2:
+    def method3x3_enlarge(self):
+        a, b, c, d, e, f, g, h = self.a, self.b, self.c, self.d, self.e, self.f, self.g, self.h
+
+        for key in self.answer_set3:
+            ans = np.count_nonzero(self.answer_set3[key] < 255)
+            if a == b or h == g:
+                break
+
+            if (ans - h)/(h - g)*0.5 < (c - b)/(b - a) < (ans - h)/(h - g)*1.5 and self.score < 2:
+                self.score = 2
+                self.answer = key
+
+            if (ans - h)/(h - g)*0.8 < (c - b)/(b - a) < (ans - h)/(h - g)*1.2 and self.score < 4:
                 self.score = 4
                 self.answer = key
 
-            if (ans - h)/(h - g)*0.9 < (c - b)/(b - a) < (ans - h)/(h - g)*1.1:
+            if (ans - h)/(h - g)*0.9 < (c - b)/(b - a) < (ans - h)/(h - g)*1.1 and self.score < 6:
                 self.score = 6
                 self.answer = key
 
-            if (ans - h)/(h - g)*0.95 < (c - b)/(b - a) < (ans - h)/(h - g)*1.05:
+            if (ans - h)/(h - g)*0.95 < (c - b)/(b - a) < (ans - h)/(h - g)*1.05 and self.score < 8:
                 self.score = 8
                 self.answer = key
 
-    def common_area(self, a, b, c):
-        a = a < 255
-        comp1 = a == b
-        comp2 = c == b
-        common = comp1 == comp2
-        return common
+    # def common_area(self, a, b, c):
+    #     a = a < 255
+    #     comp1 = a == b
+    #     comp2 = c == b
+    #     common = comp1 == comp2
+    #     return common
 
     def read_img3(self, problem):
         for key in problem.figures:
@@ -137,6 +162,15 @@ class Agent:
                 self.question_set3[key] = threshold
             else:
                 self.answer_set3[key] = threshold
+
+        self.a = np.count_nonzero(self.question_set3['A'] < 255)
+        self.b = np.count_nonzero(self.question_set3['B'] < 255)
+        self.c = np.count_nonzero(self.question_set3['C'] < 255)
+        self.d = np.count_nonzero(self.question_set3['D'] < 255)
+        self.e = np.count_nonzero(self.question_set3['E'] < 255)
+        self.f = np.count_nonzero(self.question_set3['F'] < 255)
+        self.g = np.count_nonzero(self.question_set3['G'] < 255)
+        self.h = np.count_nonzero(self.question_set3['H'] < 255)
 
     def read_img(self, problem):
 
