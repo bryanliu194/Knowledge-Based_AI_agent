@@ -21,12 +21,12 @@ class Agent:
     # Do not add any variables to this signature; they will not be used by
     # main().
     def __init__(self):
-        self.question_set = {}
-        self.answer_set = {}
+        self.question_set2 = {}
+        self.answer_set2 = {}
         self.question_set3 = {}
         self.answer_set3 = {}
-        self.methods2x2 = [self.method2x2_compare_same, self.method2x2_move, self.method2x2_add_pixel]
-        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_sum, self.method3x3_add, self.method3x3_add2, self.method3x3_sub, self.common_area, self.method3x3_diff_ver, self.method3x3_diff_hor, self.method3x3_enlarge]
+        self.methods2x2 = [self.method2x2_compare_same, self.method2x2_mirror, self.method2x2_compare_diff, self.method2x2_ratio]
+        self.methods3x3 = [self.method3x3_compare_same, self.method3x3_sum, self.method3x3_add, self.method3x3_add2, self.method3x3_sub, self.method3x3_common_area, self.method3x3_diff_ver, self.method3x3_diff_hor, self.method3x3_enlarge]
         self.a = None
         self.b = None
         self.c = None
@@ -51,9 +51,11 @@ class Agent:
     def Solve(self, problem):
 
         if problem.problemType == '2x2':
-            self.read_img(problem)
+            # self.read_img(problem)
+            self.read_img2(problem)
             for method in self.methods2x2:
                 method()
+                print(method)
                 if self.score == 10:
                     break
         elif problem.problemType == '3x3':
@@ -140,7 +142,7 @@ class Agent:
                     self.answer = key
                     self.score = 10
 
-    def common_area(self):
+    def method3x3_common_area(self):
         A, B, C, G, H = self.question_set3['A'], self.question_set3['B'], self.question_set3['C'], self.question_set3[
             'G'], self.question_set3['H']
         a, b, c, g, h = A - 255, B - 255, C - 255, G - 255, H - 255
@@ -234,166 +236,175 @@ class Agent:
         self.g = np.count_nonzero(self.question_set3['G'] < 255)
         self.h = np.count_nonzero(self.question_set3['H'] < 255)
 
-    def read_img(self, problem):
-
+    def read_img2(self, problem):
         for key in problem.figures:
             img = cv2.imread(problem.figures[key].visualFilename)
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             _, threshold = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-
-            pixels = np.count_nonzero(threshold < 255)
-            pixels = round(pixels, -2)
-
-            contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-            figure = {}
-            circle = 5
-
-            if len(contours) > 1:
-                contours = contours[1:]
-
-            for contour in contours:
-                approx = cv2.approxPolyDP(
-                    contour, 0.01 * cv2.arcLength(contour, True), True)
-
-                c = cv2.moments(contour)
-                if c['m00'] != 0.0:
-                    x = round(int(c['m10'] / c['m00']), -1)
-                    y = round(int(c['m01'] / c['m00']), -1)
-
-                # check -----------------------------------
-                if len(approx) < 10:
-                    figure[len(approx)] = (x, y)
-                else:
-                    circle += 5
-                    figure[circle] = (x, y)
+            threshold[threshold == 0] = 1
+            threshold[threshold == 255] = 0
+            threshold = threshold.astype(int)
 
             if ord(key) >= ord("A"):
-                self.question_set[key] = {'figure': figure, 'pixel': pixels}
+                self.question_set2[key] = threshold
             else:
-                self.answer_set[key] = {'figure': figure, 'pixel': pixels}
+                self.answer_set2[key] = threshold
+
+        self.a = np.count_nonzero(self.question_set2['A'])
+        self.b = np.count_nonzero(self.question_set2['B'])
+        self.c = np.count_nonzero(self.question_set2['C'])
 
     def method2x2_compare_same(self):
-        a_shapes = self.question_set['A']
-        b_shapes = self.question_set['B']
-        c_shapes = self.question_set['C']
+        a, b, c = self.question_set2['A'], self.question_set2['B'], self.question_set2['C']
 
-        if a_shapes['figure'] == b_shapes['figure']:
+        if np.count_nonzero(a - b) <= 700:
+            for key in self.answer_set2:
+                if np.count_nonzero(c - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(c - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(c - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(c - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
+        if np.count_nonzero(a - c) <= 700:
+            for key in self.answer_set2:
+                if np.count_nonzero(b - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(b - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(b - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(b - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
 
-            for key in self.answer_set:
-                pixel_diff1 = abs(a_shapes['pixel'] - b_shapes['pixel'])
-                pixel_diff2 = abs(c_shapes['pixel'] - self.answer_set[key]['pixel'])
-                if c_shapes['figure'] == self.answer_set[key]['figure']:
+    def method2x2_compare_diff(self):
+        a, b, c = self.question_set2['A'], self.question_set2['B'], self.question_set2['C']
+        diff_v = a - c
+        diff_v[diff_v == -1] = 1
+        diff_h = a - b
+        diff_h[diff_h == -1] = 1
 
-                    if abs(pixel_diff1 - pixel_diff2) < 5000:
-                        self.score = 10
-                        self.answer = key
-                        return
-                    elif self.score < 5:
-                        self.score = 5
-                        self.answer = key
+        for key in self.answer_set2:
+            diff_v2 = b - self.answer_set2[key]
+            diff_v2[diff_v2 == -1] = 1
+            diff_h2 = c - self.answer_set2[key]
+            diff_h2[diff_h2 == -1] = 1
 
-        if a_shapes['figure'] == c_shapes['figure']:
-
-            for key in self.answer_set:
-                pixel_diff1 = abs(a_shapes['pixel'] - c_shapes['pixel'])
-                pixel_diff2 = abs(b_shapes['pixel'] - self.answer_set[key]['pixel'])
-
-                if b_shapes['figure'] == self.answer_set[key]['figure']:
-                    if abs(pixel_diff1 - pixel_diff2) < 5000:
-                        self.score = 10
-                        self.answer = key
-                        return
-                    elif self.score < 5:
-                        self.score = 5
-                        self.answer = key
-
-    def method2x2_move(self):
-        movement = []
-
-        a_shapes = self.question_set['A']
-        b_shapes = self.question_set['B']
-        c_shapes = self.question_set['C']
-
-        for key in a_shapes['figure']:
-            if key in b_shapes['figure']:
-                movement.append((a_shapes['figure'][key][0] - b_shapes['figure'][key][0],
-                                 a_shapes['figure'][key][1] - b_shapes['figure'][key][1]))
-
-        for key in c_shapes['figure']:
-
-            for key2 in self.answer_set:
-                movement2 = []
-
-                pixel_diff1 = abs(a_shapes['pixel'] - b_shapes['pixel'])
-                pixel_diff2 = abs(c_shapes['pixel'] - self.answer_set[key2]['pixel'])
-
-                if key in self.answer_set[key2]['figure']:
-                    movement2.append((c_shapes['figure'][key][0] - self.answer_set[key2]['figure'][key][0],
-                                      c_shapes['figure'][key][1] - self.answer_set[key2]['figure'][key][1]))
-
-                if movement2 == movement and len(movement) > 0:
-                    if abs(pixel_diff1 - pixel_diff2) < 300:
-                        self.score = 10
-                        self.answer = key2
-                        return
-                    elif self.score < 5:
-                        self.score = 5
-                        self.answer = key
-
-        movement = []
-        for key in a_shapes['figure']:
-            if key in c_shapes['figure']:
-                movement.append((a_shapes['figure'][key][0] - c_shapes['figure'][key][0],
-                                 a_shapes['figure'][key][1] - c_shapes['figure'][key][1]))
-
-        for key in b_shapes['figure']:
-
-            for key2 in self.answer_set:
-                movement2 = []
-
-                pixel_diff1 = abs(a_shapes['pixel'] - c_shapes['pixel'])
-                pixel_diff2 = abs(b_shapes['pixel'] - self.answer_set[key2]['pixel'])
-
-                if key in self.answer_set[key2]['figure']:
-                    movement2.append((b_shapes['figure'][key][0] - self.answer_set[key2]['figure'][key][0],
-                                      b_shapes['figure'][key][1] - self.answer_set[key2]['figure'][key][1]))
-
-                if movement2 == movement and len(movement) > 0:
-                    if abs(pixel_diff1 - pixel_diff2) < 300:
-                        self.score = 10
-                        self.answer = key2
-                        return
-                    elif self.score < 5:
-                        self.score = 5
-                        self.answer = key
-
-    def method2x2_add_pixel(self):
-        a_pixel = self.question_set['A']['pixel']
-        b_pixel = self.question_set['B']['pixel']
-        c_pixel = self.question_set['C']['pixel']
-
-        pixel_diff1 = abs(a_pixel - b_pixel)
-
-        for key in self.answer_set:
-            pixel_diff = abs(c_pixel - self.answer_set[key]['pixel'])
-            if abs(pixel_diff1 - pixel_diff) < 200 and self.score < 8:
-                self.score = 8
-                self.answer = key
-            elif abs(pixel_diff1 - pixel_diff) < 2000 and self.score < 4:
+            if np.count_nonzero(diff_v - diff_v2) <= 1500 and self.score < 4:
                 self.score = 4
                 self.answer = key
-
-        pixel_diff2 = abs(a_pixel - c_pixel)
-
-        for key in self.answer_set:
-            pixel_diff = abs(b_pixel - self.answer_set[key]['pixel'])
-
-            if abs(pixel_diff2 - pixel_diff) < 200 and self.score < 8:
+            if np.count_nonzero(diff_v - diff_v2) <= 1000 and self.score < 6:
+                self.score = 6
+                self.answer = key
+            if np.count_nonzero(diff_v - diff_v2) <= 500 and self.score < 8:
                 self.score = 8
                 self.answer = key
-            elif abs(pixel_diff2 - pixel_diff) < 2000 and self.score < 4:
+            if np.count_nonzero(diff_v - diff_v2) <= 100 and self.score < 10:
+                self.score = 10
+                self.answer = key
+                break
+
+            if np.count_nonzero(diff_h - diff_h2) <= 1500 and self.score < 4:
                 self.score = 4
                 self.answer = key
+            if np.count_nonzero(diff_h - diff_h2) <= 1000 and self.score < 6:
+                self.score = 6
+                self.answer = key
+            if np.count_nonzero(diff_h - diff_h2) <= 500 and self.score < 8:
+                self.score = 8
+                self.answer = key
+            if np.count_nonzero(diff_h - diff_h2) <= 100 and self.score < 10:
+                self.score = 10
+                self.answer = key
+                break
+
+    def method2x2_mirror(self):
+        a, b, c = self.question_set2['A'], self.question_set2['B'], self.question_set2['C']
+        bh, ch, bv, cv = np.flip(b, axis=1), np.flip(c, axis=1), np.flip(b, axis=0), np.flip(c, axis=0)
+
+        if np.count_nonzero(a - bh) <= 800:
+            for key in self.answer_set2:
+                if np.count_nonzero(ch - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(ch - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(ch - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(ch - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
+        if np.count_nonzero(a - cv) <= 800:
+            for key in self.answer_set2:
+                if np.count_nonzero(bv - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(bv - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(bv - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(bv - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
+        if np.count_nonzero(a - ch) <= 1500:
+            for key in self.answer_set2:
+                if np.count_nonzero(bh - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(bh - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(bh - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(bh - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
+        if np.count_nonzero(a - bv) <= 1500:
+            for key in self.answer_set2:
+                if np.count_nonzero(cv - self.answer_set2[key]) <= 1500 and self.score < 4:
+                    self.score = 4
+                    self.answer = key
+                if np.count_nonzero(cv - self.answer_set2[key]) <= 1000 and self.score < 6:
+                    self.score = 6
+                    self.answer = key
+                if np.count_nonzero(cv - self.answer_set2[key]) <= 500 and self.score < 8:
+                    self.score = 8
+                    self.answer = key
+                if np.count_nonzero(cv - self.answer_set2[key]) <= 100 and self.score < 10:
+                    self.score = 10
+                    self.answer = key
+                    break
+
+    def method2x2_ratio(self):
+        if self.score == 0:
+            a, b, c = self.a, self.b, self.c
+            ratio = b / a
+            best = 100
+            for key in self.answer_set2:
+                ratio2 = np.count_nonzero(self.answer_set2[key]) / c
+                diff = abs(ratio2 - ratio)
+                if diff < best:
+                    self.answer = key
+                    self.score = 1
+                    best = diff
