@@ -53,21 +53,18 @@ class Agent:
             self.read_img2(problem)
             for method in self.methods2x2:
                 method()
-                print(method)
                 if self.score == 10:
                     break
         elif problem.problemType == '3x3':
             self.read_img3(problem)
             for method in self.methods3x3:
                 method()
-                print(method)
-                print(self.score)
                 if self.score == 10:
                     break
 
         answer = self.answer
-        print(f'answer {self.answer}')
-        print(f'score {self.score}')
+        # print(f'answer {self.answer}')
+        # print(f'score {self.score}')
         self.__init__()
         return int(answer)
 

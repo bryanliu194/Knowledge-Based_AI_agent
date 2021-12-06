@@ -1,3 +1,0 @@
-2x2
-true
-false

@@ -16,6 +16,7 @@ from Agent import Agent
 from ProblemSet import ProblemSet
 from RavensGrader import grade
 
+
 def getNextLine(r):
     return r.readline().rstrip()
 
@@ -23,6 +24,8 @@ def getNextLine(r):
 # to all the current problems.
 #
 # You do not need to use this method.
+
+
 def solve():
     sets=[] # The variable 'sets' stores multiple problem sets.
             # Each problem set comes from a different folder in /Problems/
@@ -55,9 +58,12 @@ def solve():
 
 # The main execution will have your agent generate answers for all the problems,
 # then generate the grades for them.
+
+
 def main():
     solve()
     grade()
+
 
 if __name__ == "__main__":
     main()
